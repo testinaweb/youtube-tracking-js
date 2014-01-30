@@ -1,11 +1,11 @@
-// this code has been emplemented to track all iframe youtube videos in a page.
-// inspiration code:
+// This code has been emplemented to track actions on all iframe YouTube videos in a page.
+// Inspiration code:
 // https://developers.google.com/youtube/youtube_player_demo
 // http://www.lunametrics.com/blog/2012/10/22/automatically-track-youtube-videos-events-google-analytics/
  
 // Internet Explorer compatibility
 
-// console.log hack
+// console.log hack for Internet Explorer
 if (typeof console == 'undefined') {
 	window.console = {
 		log: function (s){alert(s);} 
@@ -48,10 +48,19 @@ var videoArray = new Array();
 var playerArray = new Array();
 var titleArray = new Array();
 var pauseFlag = new Array();
+var pauseTrackTimer = new Array();
+var playCounter = new Array();
 var percentageScore = new Array();
 
 // percentage score to track i.e. 25%, 50%, 75%
 var trackingScore = new Array(25, 50, 75);
+
+// The option are:
+// 'GTM' (Google Tag Manager)
+// 'GSA' (Google Standard Analytics)
+// 'GUA' (Google Universal Analytics)
+// 'CST' (Custom - console.log())
+var trackingTags = 'CST';
 
 // trackYouTube get all iframe and initialize the variable for the tracking
 (function($) {
@@ -98,6 +107,8 @@ var trackingScore = new Array(25, 50, 75);
 
 				// init default values for every videos 
 				pauseFlag[matches[1]] = false;
+				pauseTrackTimer[matches[1]] = null;
+				playCounter[matches[1]] = 0;
 				percentageScore[matches[1]] = trackingScore.slice(0);
 
 				// write the id in each iframe
@@ -134,17 +145,35 @@ if(navigator.userAgent.toLowerCase().indexOf('opera') > -1){
 
 // when the videos are ready, it starts the tracking for the percentage
 function onPlayerReady(event) {
-	
+	// can't not be used the variable: videoarraynum = event.target.getVideoData().video_id;
+
 	// this function runs every 600 milliseconds
 	setInterval(function(){
 		var percentage = Math.round(event.target.getCurrentTime()*100/Math.round(event.target.getDuration()));
 		if (percentageScore[event.target.getVideoData().video_id].indexOf(percentage) > -1) {
-			console.log(titleArray[event.target.getVideoData().video_id]+' - '+percentage);
+			// tracking tags
+			switch (trackingTags) {
+				case 'GTM': // (Google Tag Manager)
+					dataLayer.push({'VideoName': titleArray[event.target.getVideoData().video_id]});
+					dataLayer.push({"VideoAction": percentage});
+					dataLayer.push({"event": "actionvideo"});
+					break;
+				case 'GSA': // (Google Standard Analytics)
+					_gaq.push(['_trackEvent', percentage, 'Cueing', titleArray[event.target.getVideoData().video_id]]);
+					break;
+				case 'GUA': // (Google Universal Analytics)
+					ga('send', 'event', 'Videos', percentage, titleArray[event.target.getVideoData().video_id]);
+					break;
+				case 'CST': // (Custom - console.log())
+					console.log(titleArray[event.target.getVideoData().video_id]+' - '+percentage);
+					break;
+			}
 			removeA(percentageScore[event.target.getVideoData().video_id], percentage);
 		}
 
 	}, 600);
-	//console.log(event+' onPlayerReady ');
+	// Here the tracking code to track if the video is loaded
+	// console.log(titleArray[event.target.getVideoData().video_id]+' - onPlayerReady');
 }
 
 function onPlayerStateChange(event) { 
@@ -153,36 +182,132 @@ function onPlayerStateChange(event) {
 
 	// when the video is played
 	if (event.data ==YT.PlayerState.PLAYING){
-		console.log('Videos PLAY '+titleArray[videoarraynum]);
-		//_gaq.push(['_trackEvent', 'Videos', 'Play', videoArray[videoarraynum] ]); 
+		// Stop the tracking of the real pause
+		//clearTimeout(pauseTrackTimer[videoarraynum]);
 
+		// just the first time track the action Play otherwise Resume
+		var action = '';
+		if (playCounter[videoarraynum] == 0)
+			action = 'Play';
+		else
+			action = 'Resume';
+		++playCounter[videoarraynum];
+
+		// tracking tags
+		switch (trackingTags) {
+			case 'GTM': // (Google Tag Manager)
+				dataLayer.push({'VideoName': titleArray[videoarraynum]});
+				dataLayer.push({'VideoAction': action});
+				dataLayer.push({'event': 'actionvideo'});
+				break;
+			case 'GSA': // (Google Standard Analytics)
+				_gaq.push(['_trackEvent', 'Videos', action, titleArray[videoarraynum]]);
+				break;
+			case 'GUA': // (Google Universal Analytics)
+				ga('send', 'event', 'Videos', action, titleArray[videoarraynum]);
+				break;
+			case 'CST': // (Custom - console.log())
+				console.log('Video '+action+' '+titleArray[videoarraynum]);
+				break;
+		}
+
+		// track the event Pause on each video
 		pauseFlag[videoarraynum] = false;
 	} 
 	
-	// when the video is ended
-	if (event.data ==YT.PlayerState.ENDED){
-		console.log('Videos Watch to End '+titleArray[videoarraynum]);
-		//_gaq.push(['_trackEvent', 'Videos', 'Watch to End', videoArray[videoarraynum] ]); 
-	} 
-
 	// when the video is paused
 	if (event.data ==YT.PlayerState.PAUSED && pauseFlag[videoarraynum] == false){
-		console.log('Videos PAUSE '+titleArray[videoarraynum]);
-		//_gaq.push(['_trackEvent', 'Videos', 'Pause', videoArray[videoarraynum] ]); 
+		// track a real pause
+		//pauseTrackTimer[videoarraynum] = setTimeout(function(){
+		//	console.log('Real Pause '+titleArray[videoarraynum]);
+		//},400);
 
+		// tracking tags
+		switch (trackingTags) {
+			case 'GTM': // (Google Tag Manager)
+				dataLayer.push({'VideoName': titleArray[videoarraynum]});
+				dataLayer.push({'VideoAction': 'Watch to End'});
+				dataLayer.push({'event': 'actionvideo'});
+				break;
+			case 'GSA': // (Google Standard Analytics)
+				_gaq.push(['_trackEvent', 'Videos', 'Pause', titleArray[videoarraynum]]);
+				break;
+			case 'GUA': // (Google Universal Analytics)
+				ga('send', 'event', 'Videos', 'Pause', titleArray[videoarraynum]);
+				break;
+			case 'CST': // (Custom - console.log())
+				console.log('Video Pause '+titleArray[videoarraynum]);
+				break;
+		}
+
+		// track the event Pause on each video
 		pauseFlag[videoarraynum] = true;
+	}
+
+	// when the video is ended
+	if (event.data ==YT.PlayerState.ENDED){
+		// Stop the tracking of the real pause
+		//clearTimeout(pauseTrackTimer[videoarraynum]);
+		
+		// tracking tags
+		switch (trackingTags) {
+			case 'GTM': // (Google Tag Manager)
+				dataLayer.push({'VideoName': titleArray[videoarraynum]});
+				dataLayer.push({'VideoAction': 'Watch to End'});
+				dataLayer.push({'event': 'actionvideo'});
+				break;
+			case 'GSA': // (Google Standard Analytics)
+				_gaq.push(['_trackEvent', 'Videos', 'Watch to End', titleArray[videoarraynum]]);
+				break;
+			case 'GUA': // (Google Universal Analytics)
+				ga('send', 'event', 'Videos', 'Watch to End', titleArray[videoarraynum]);
+				break;
+			case 'CST': // (Custom - console.log())
+				console.log('Video Watch to End '+titleArray[videoarraynum]);
+				break;
+		}
 	}
 
 	// when the video is buffered
 	if (event.data ==YT.PlayerState.BUFFERING){
-		//console.log('Videos Buffering '+titleArray[videoarraynum]);
-		//_gaq.push(['_trackEvent', 'Videos', 'Buffering', videoArray[videoarraynum] ]); 
+		// tracking tags
+		switch (trackingTags) {
+			case 'GTM': // (Google Tag Manager)
+				dataLayer.push({'VideoName': titleArray[videoarraynum]});
+				dataLayer.push({'VideoAction': 'Buffering'});
+				dataLayer.push({'event': 'actionvideo'});
+				break;
+			case 'GSA': // (Google Standard Analytics)
+				_gaq.push(['_trackEvent', 'Videos', 'Buffering', titleArray[videoarraynum]]);
+				break;
+			case 'GUA': // (Google Universal Analytics)
+				ga('send', 'event', 'Videos', 'Buffering', titleArray[videoarraynum]);
+				break;
+			case 'CST': // (Custom - console.log())
+				console.log('Video Buffering '+titleArray[videoarraynum]);
+				break;
+		}
 	}
 
 	// when the video is cued
 	if (event.data ==YT.PlayerState.CUED){
-		//console.log('Videos Cueing '+titleArray[videoarraynum]);
-		//_gaq.push(['_trackEvent', 'Videos', 'Cueing', videoArray[videoarraynum] ]); 
+		// tracking tags
+		switch (trackingTags) {
+			case 'GTM': // (Google Tag Manager)
+				dataLayer.push({'VideoName': titleArray[videoarraynum]});
+				dataLayer.push({'VideoAction': 'Cueing'});
+				dataLayer.push({'event': 'actionvideo'});
+				break;
+			case 'GSA': // (Google Standard Analytics)
+				_gaq.push(['_trackEvent', 'Videos', 'Cueing', titleArray[videoarraynum]]);
+				break;
+			case 'GUA': // (Google Universal Analytics)
+				ga('send', 'event', 'Videos', 'Cueing', titleArray[videoarraynum]);
+				break;
+			case 'CST': // (Custom - console.log())
+				console.log('Video Cueing '+titleArray[videoarraynum]);
+				break;
+		}
 	} 
 } 
 
