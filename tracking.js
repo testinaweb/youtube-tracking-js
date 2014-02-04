@@ -2,6 +2,7 @@
  * This code has been emplemented to track actions on all iframe YouTube videos in a page.
  * Developer: Manuel Kanah
  * e-mail: manuel@kanah.it
+ * Github: https://github.com/testinaweb/YouTubeTrackingJs
  * Mail me for any suggestions about the code.
  *
  * Inspiration code:
