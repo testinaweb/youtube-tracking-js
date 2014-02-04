@@ -1,10 +1,15 @@
-// This code has been emplemented to track actions on all iframe YouTube videos in a page.
-// Inspiration code:
-// https://developers.google.com/youtube/youtube_player_demo
-// http://www.lunametrics.com/blog/2012/10/22/automatically-track-youtube-videos-events-google-analytics/
- 
-// Internet Explorer compatibility
+/* 
+ * This code has been emplemented to track actions on all iframe YouTube videos in a page.
+ * Developer: Manuel Kanah
+ * e-mail: manuel@kanah.it
+ * Mail me for any suggestions about the code.
+ *
+ * Inspiration code:
+ * https://developers.google.com/youtube/youtube_player_demo
+ * http://www.lunametrics.com/blog/2012/10/22/automatically-track-youtube-videos-events-google-analytics/
+ */
 
+// Internet Explorer compatibility
 // console.log hack for Internet Explorer
 if (typeof console == 'undefined') {
 	window.console = {
@@ -12,7 +17,7 @@ if (typeof console == 'undefined') {
 	}
 }
 
-// indexOf for IE 8
+// indexOf for IE8
 if(!Array.prototype.indexOf) {
     Array.prototype.indexOf = function(what, i) {
         i = i || 0;
@@ -155,7 +160,7 @@ function onPlayerReady(event) {
 			switch (trackingTags) {
 				case 'GTM': // (Google Tag Manager)
 					dataLayer.push({'VideoName': titleArray[event.target.getVideoData().video_id]});
-					dataLayer.push({"VideoAction": percentage});
+					dataLayer.push({"VideoAction": 'Percentage-'+percentage});
 					dataLayer.push({"event": "actionvideo"});
 					break;
 				case 'GSA': // (Google Standard Analytics)
