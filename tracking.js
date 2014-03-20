@@ -89,6 +89,15 @@ var trackingTags = 'CST';
 				// array of youtube video ids
 				videoArray[i] = matches[1];
 
+				// enable api: ?enablejsapi=1
+				if (vidSrc.indexOf('enablejsapi') == -1) {
+					if (vidSrc.indexOf('?') == -1) {
+						$(this).attr('src', vidSrc+'?enablejsapi=1');
+					} else {
+						$(this).attr('src', vidSrc+'&enablejsapi=1');
+					}
+				}
+
 				// get the title for tracking otherwise i use the youtube video id
 				titleArray[matches[1]] = matches[1];
 				var msie = false;
